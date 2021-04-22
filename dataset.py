@@ -1,14 +1,4 @@
-import os
-import csv
 import argparse
-import tempfile
-
-from tqdm import tqdm
-from termcolor import colored
-
-from sibyl import dataset
-from sibyl import transformer
-from sibyl.util import filesystem as fs
 
 parser = argparse.ArgumentParser(description="Download and transform EEG dataset")
 parser.add_argument("action",
@@ -21,6 +11,24 @@ parser.add_argument("dataset",
 parser.add_argument("output-path",
                     type=str,
                     help="Output dataset path. The resulting file will be in .tar.gz if the action is download and .csv or parquet format if compression is enabled")
+
+# early parsing arguments
+args = None
+if __name__ == "__main__":
+    # parse arguments
+    args = vars(parser.parse_args())
+
+# imports
+import os
+import csv
+import tempfile
+
+from tqdm import tqdm
+from termcolor import colored
+
+from sibyl import dataset
+from sibyl import transformer
+from sibyl.util import filesystem as fs
 
 def download_dataset(dataset_type: str, output_path: str):
     print(colored("Starting to download {} dataset".format(dataset_type), "cyan"))
@@ -84,9 +92,6 @@ def compress_dataset(dataset_path: str, output_path: str):
 # main app entry point
 if __name__ == "__main__":
 
-    # parse arguments
-    args = vars(parser.parse_args())
-
     # download dataset from UCI server (.tar.gz)
     if args["action"] == "download":
         if (args["dataset"] not in ["small", "large", "full"]):
@@ -119,5 +124,6 @@ if __name__ == "__main__":
 
         compress_dataset(args["dataset"], args["output-path"])
 
+    # out of range
     else:
         print("Unknown action, valid values are: download, transform")
