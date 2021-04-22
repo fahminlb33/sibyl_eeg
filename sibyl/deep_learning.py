@@ -57,7 +57,7 @@ def build_model(kind: str, units: List[int], input_shape: Any, num_classes: int,
             return_sequences = not len(units) == i
 
             # add top layer with input shape or subsequent layer
-            if unit == 0:
+            if i == 0:
                 model.add(tf.keras.layers.LSTM(unit, input_shape=input_shape, return_sequences=True))
             else:
                 model.add(tf.keras.layers.LSTM(unit, return_sequences=return_sequences))
