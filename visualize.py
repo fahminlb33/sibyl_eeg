@@ -95,12 +95,12 @@ def load_dataset(path: str):
 # main app entry point
 if __name__ == "__main__":
     # validations
-    if not fs.is_file_exists(args["dataset"]):
-        print(colored("Dataset file does not exists", "red"))
-        exit()
-
     if not fs.is_file_extension(args["dataset"], [".csv", ".parquet"]):
         print(colored("Dataset is not in .csv or .parquet extension", "red"))
+        exit()
+
+    if not fs.is_file_exists(args["dataset"]) and not fs.is_directory_exists(args["dataset"]) :
+        print(colored("Dataset file does not exists", "red"))
         exit()
 
     if args["id"] is None and args["action"] != "channels":

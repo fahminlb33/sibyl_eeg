@@ -63,12 +63,12 @@ if __name__ == "__main__":
     from sibyl.util import filesystem as fs
 
     # validations
-    if not fs.is_file_exists(args["dataset"]):
-        print(colored("Dataset file does not exists", "red"))
-        exit()
-
     if not fs.is_file_extension(args["dataset"], [".csv", ".parquet"]):
         print(colored("Dataset is not in .csv or .parquet extension", "red"))
+        exit()
+
+    if not fs.is_file_exists(args["dataset"]) and not fs.is_directory_exists(args["dataset"]) :
+        print(colored("Dataset file does not exists", "red"))
         exit()
 
     # load dataset
@@ -111,7 +111,15 @@ if __name__ == "__main__":
     callbacks: List[tf.keras.callbacks.Callback] = []
     if args["logdir"] is not None:
         print(colored("\nPreparing TensorBoard...", "cyan"))
-        callbacks.append(dl.create_tensorboard(args["model"], args["logdir"]))
+
+        log_prefix = args["model"]
+        if args["normalize"]:
+            log_prefix = log_prefix + "norm"
+        if args["dropout"] is not None:
+            log_prefix = log_prefix + "dropout"
+
+        log_prefix = log_prefix + "_" + args["units"] + "_" + str(args["epochs"])
+        callbacks.append(dl.create_tensorboard(log_prefix, args["logdir"]))
 
     # compile model with an optimizer and loss function
     print(colored("\nFinalizing model...", "cyan"))

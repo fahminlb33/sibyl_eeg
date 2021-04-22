@@ -33,6 +33,9 @@ def delete_file(path: str):
 def is_file_exists(path: str):
     return os.path.isfile(path)
 
+def is_directory_exists(path: str):
+    return os.path.isdir(path)
+
 def is_file_extension(path: str, extensions: List[str]):
     return len([ext in path for ext in extensions]) > 0
 
