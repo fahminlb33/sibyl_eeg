@@ -35,9 +35,9 @@ def build_model(kind: str, units: List[int], input_shape: Any, num_classes: int,
         for i, unit in enumerate(units):
             # add top layer with input shape or subsequent layer
             if i == 0:
-                model.add(tf.keras.layers.Conv1D(unit, activation="relu", input_shape=input_shape, padding="same", kernel_size=2))
+                model.add(tf.keras.layers.Conv1D(unit, input_shape=input_shape, padding="same", kernel_size=2))
             else:
-                model.add(tf.keras.layers.Conv1D(unit, activation="relu", padding="same", kernel_size=2))
+                model.add(tf.keras.layers.Conv1D(unit, padding="same", kernel_size=2))
 
             # add normalization
             if normalize:
@@ -58,9 +58,9 @@ def build_model(kind: str, units: List[int], input_shape: Any, num_classes: int,
 
             # add top layer with input shape or subsequent layer
             if unit == 0:
-                model.add(tf.keras.layers.LSTM(unit, activation="relu", input_shape=input_shape, return_sequences=True))
+                model.add(tf.keras.layers.LSTM(unit, input_shape=input_shape, return_sequences=True))
             else:
-                model.add(tf.keras.layers.LSTM(unit, activation="relu", return_sequences=return_sequences))
+                model.add(tf.keras.layers.LSTM(unit, return_sequences=return_sequences))
 
             # add normalization
             if normalize:
@@ -90,6 +90,6 @@ def reshape_data(df: pd.DataFrame) -> Tuple[Any, Any]:
 
     return (X, y)
 
-def create_tensorboard(logdir: str) -> tf.keras.callbacks.TensorBoard:
-    log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+def create_tensorboard(prefix: str, logdir: str) -> tf.keras.callbacks.TensorBoard:
+    log_dir = "logs/fit/" + prefix + "-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     return tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
