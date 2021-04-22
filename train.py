@@ -1,7 +1,4 @@
 import argparse
-from termcolor import colored
-
-from typing import List, Any
 
 parser = argparse.ArgumentParser(description="Download and transform EEG dataset")
 parser.add_argument("model",
@@ -25,9 +22,6 @@ parser.add_argument("--normalize",
 parser.add_argument("--dropout",
                     type=float,
                     help="Enable dropout regularization on each layer, the specified value determines dropout rate on each layer")
-parser.add_argument("--save",
-                    type=str,
-                    help="Save latest model to the specified folder as SavedModel")
 parser.add_argument("--logdir",
                     type=str,
                     help="Enable Tensorboard and save the log to the specified path")
@@ -38,95 +32,105 @@ parser.add_argument("--validation-split",
 parser.add_argument("--evaluation-split",
                     type=float,
                     help="Run model evaluation after training, the specified value determines the test size (0.0 - 1.0)")
+parser.add_argument("--save",
+                    type=str,
+                    help="Save latest model to the specified folder as SavedModel")
 parser.add_argument("--verbose",
                     action="store_true",
                     help="Enable default TensorFlow debug information")
 
-# parse arguments
-args = vars(parser.parse_args())
-
 # main app entry point
+if __name__ == "__main__":
 
-if not args["verbose"]:
-    import os
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+    # parse arguments
+    args = vars(parser.parse_args())
 
-import pandas as pd
-import tensorflow as tf
+    # reduce TensorFlow verbosity
+    if not args["verbose"]:
+        import os
+        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-from sklearn.model_selection import train_test_split
+    # imports
+    from termcolor import colored
+    from typing import List, Any
 
-from sibyl import deep_learning as dl
-from sibyl.util import filesystem as fs
+    import pandas as pd
+    import tensorflow as tf
 
-if not fs.is_file_exists(args["dataset"]):
-    print(colored("Dataset file does not exists", "red"))
-    exit()
+    from sklearn.model_selection import train_test_split
 
-if not fs.is_file_extension(args["dataset"], [".csv", ".parquet"]):
-    print(colored("Dataset is not in .csv or .parquet extension", "red"))
-    exit()
+    from sibyl import deep_learning as dl
+    from sibyl.util import filesystem as fs
 
-# load dataset
-print(colored("Loading dataset...", "cyan"))
-df: pd.DataFrame = None
-if "parquet" in args["dataset"]:
-    df = pd.read_parquet(args["dataset"])
-else:
-    df = pd.read_csv(args["dataset"])
+    # validations
+    if not fs.is_file_exists(args["dataset"]):
+        print(colored("Dataset file does not exists", "red"))
+        exit()
 
-# reshape the dataset
-X, y = dl.reshape_data(df)
+    if not fs.is_file_extension(args["dataset"], [".csv", ".parquet"]):
+        print(colored("Dataset is not in .csv or .parquet extension", "red"))
+        exit()
 
-# prepare split data, if needed
-X_train, X_test, y_train, y_test = None, None, None, None
-if args["evaluation_split"] is not None:
-    print(colored("\nSplitting dataset for evaluation...", "cyan"))
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=args["evaluation_split"], stratify=y, random_state=42)
+    # load dataset
+    print(colored("Loading dataset...", "cyan"))
+    df: pd.DataFrame = None
+    if "parquet" in args["dataset"]:
+        df = pd.read_parquet(args["dataset"])
+    else:
+        df = pd.read_csv(args["dataset"])
 
-    print("Train shape: ", X_train.shape, y_train.shape)
-    print("Test shape: ", X_test.shape, y_test.shape)
-else:
-    X_train, y_train = X, y
-    print("Train shape: ", X_train.shape, y_train.shape)
+    # reshape the dataset
+    X, y = dl.reshape_data(df)
 
-# build model sequence
-print(colored("\nBuilding model...", "cyan"))
-model_args = {
-    "kind": args["model"],
-    "units": [int(x) for x in args["units"].split(",")],
-    "input_shape": (X_train.shape[1], X_train.shape[2]),
-    "num_classes": y_train.shape[1],
-    "normalize": args["normalize"],
-    "dropout": args["dropout"]
-}
+    # prepare split data, if needed
+    X_train, X_test, y_train, y_test = None, None, None, None
+    if args["evaluation_split"] is not None:
+        print(colored("\nSplitting dataset for evaluation...", "cyan"))
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=args["evaluation_split"], stratify=y, random_state=42)
 
-model = dl.build_model(**model_args)
+        print("Train shape: ", X_train.shape, y_train.shape)
+        print("Test shape: ", X_test.shape, y_test.shape)
+    else:
+        X_train, y_train = X, y
+        print("Train shape: ", X_train.shape, y_train.shape)
 
-# create tensorboard, if needed
-callbacks: List[tf.keras.callbacks.Callback] = []
-if args["logdir"] is not None:
-    print(colored("\nPreparing TensorBoard...", "cyan"))
-    callbacks.append(dl.create_tensorboard(args["logdir"]))
+    # build model sequence
+    print(colored("\nBuilding model...", "cyan"))
+    model_args = {
+        "kind": args["model"],
+        "units": [int(x) for x in args["units"].split(",")],
+        "input_shape": (X_train.shape[1], X_train.shape[2]),
+        "num_classes": y_train.shape[1],
+        "normalize": args["normalize"],
+        "dropout": args["dropout"]
+    }
 
-# compile model with an optimizer and loss function
-print(colored("\nFinalizing model...", "cyan"))
-dl.finalize_model(model)
+    model = dl.build_model(**model_args)
 
-print(colored("\n{} --- Model Summary ---".format((" " * 20)), "cyan"))
-print(model.summary())
+    # create tensorboard, if needed
+    callbacks: List[tf.keras.callbacks.Callback] = []
+    if args["logdir"] is not None:
+        print(colored("\nPreparing TensorBoard...", "cyan"))
+        callbacks.append(dl.create_tensorboard(args["model"], args["logdir"]))
 
-# start model training
-print(colored("\nTraining model...", "cyan"))
-dl.train_model(model, X_train, y_train, args["epochs"], args["validation_split"], callbacks)
+    # compile model with an optimizer and loss function
+    print(colored("\nFinalizing model...", "cyan"))
+    dl.finalize_model(model)
 
-# save model, if needed
-if args["save"] is not None:
-    print(colored("\nSaving model state...", "cyan"))
-    tf.saved_model.save(model, args["save"])
+    print(colored("\n{} --- Model Summary ---".format((" " * 20)), "cyan"))
+    print(model.summary())
 
-# perform evaluation
-if args["evaluation_split"] is not None:
-    print(colored("\nRunning model evaluation...", "cyan"))
-    loss, acc = model.evaluate(X_test, y_test)
-    print("Loss: {}\nAcurracy: {}".format(loss, acc))
+    # start model training
+    print(colored("\nTraining model...", "cyan"))
+    dl.train_model(model, X_train, y_train, args["epochs"], args["validation_split"], callbacks)
+
+    # save model, if needed
+    if args["save"] is not None:
+        print(colored("\nSaving model state...", "cyan"))
+        tf.saved_model.save(model, args["save"])
+
+    # perform evaluation
+    if args["evaluation_split"] is not None:
+        print(colored("\nRunning model evaluation...", "cyan"))
+        loss, acc = model.evaluate(X_test, y_test)
+        print("Loss: {}\nAcurracy: {}".format(loss, acc))

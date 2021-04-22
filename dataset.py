@@ -83,6 +83,8 @@ def compress_dataset(dataset_path: str, output_path: str):
 
 # main app entry point
 if __name__ == "__main__":
+
+    # parse arguments
     args = vars(parser.parse_args())
 
     # download dataset from UCI server (.tar.gz)
