@@ -108,6 +108,7 @@ if __name__ == "__main__":
         exit()
 
     # load dataset
+    print(colored("Loading dataset...", "cyan"))
     df: pd.DataFrame = load_dataset(args["dataset"])
 
     # get available channels
