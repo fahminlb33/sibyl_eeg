@@ -13,10 +13,10 @@ You can download, transform, and compress the dataset using the `dataset.py`.
 python dataset.py download full .
 
 # transform the downloaded dataset into CSV
-python dataset.py eeg_full.tar dataset.csv
+python dataset.py transform eeg_full.tar dataset.csv
 
 # compress the CSV dataset into parquet, if necessary
-python dataset.py dataset.csv dataset_compressed.parquet
+python dataset.py compress dataset.csv dataset_compressed.parquet
 ```
 
 ## Visualizing data
@@ -25,7 +25,7 @@ Visualize EEG dataset into five different visualizations.
 
 ```bash
 # list all available channels in the dataset
-python visualize.py chanels dataset.csv
+python visualize.py channels dataset.csv
 
 # visualize EEG recording
 python visualize.py signal dataset.csv --id a_1_co2a0000364 --trial 0 --channel AF1,F7
@@ -37,7 +37,7 @@ python visualize.py signal_fft dataset.csv --id a_1_co2a0000364 --trial 0 --chan
 python visualize.py topograph dataset.csv --id a_1_co2a0000364 --trial 0
 
 # animated topograph
-python visualize.py topograph dataset.csv --id a_1_co2a0000364 --trial 0
+python visualize.py topograph_animate dataset.csv --id a_1_co2a0000364 --trial 0
 ```
 
 ## Training the neural network
